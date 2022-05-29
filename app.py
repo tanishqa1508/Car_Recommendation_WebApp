@@ -70,7 +70,7 @@ def load_lottieurl(url: str):
     return r.json()
 
 def main():
-    st.title("CAR RECOMMENDATION WEBAPP")
+    st.title("CAR RECOMMENDATION ")
     menu = ['HOME', 'RECOMMEND CARS']
     choice = st.sidebar.selectbox("MENU", menu)
     df = load_dataset("G:/CourseWebapp/data/newCarsIndia.csv")
