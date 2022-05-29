@@ -1,4 +1,4 @@
-import json
+# IMPORT NECESSITIES
 import requests
 import streamlit as st
 import streamlit.components.v1 as stc
@@ -6,7 +6,6 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity, linear_kernel
 from streamlit_lottie import st_lottie
-from streamlit_lottie import st_lottie_spinner
 
 
 # LOAD DATASET
@@ -15,6 +14,7 @@ def load_dataset(data):
     return df
 
 
+# VECTORIZE DATA AND GENERATING SIMILARITY MATRIX
 def vectorize_t2c(data):
     count_vector = CountVectorizer()
     cv_mat = count_vector.fit_transform(data)
@@ -23,24 +23,27 @@ def vectorize_t2c(data):
     print(cosine_sim)
     return cosine_sim
 
+
+# RECOMMENDATION SNIPPET
 @st.cache
 def recommend_cars(title, cosine_sim, df, no_ofRecommendations=5):
-    # indices of the course
+    # INDICES OF CAR
     car_indices = pd.Series(df.index, index=df['Car']).drop_duplicates()
-    # Index of course
     idx = car_indices[title]
 
-    # Look into the cosine matr for that index
+    # WORKING WITH THE COSINES
     sim_scores = list(enumerate(cosine_sim[idx]))
     sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
     selected_car_indices = [i[0] for i in sim_scores[1:]]
     selected_car_scores = [i[0] for i in sim_scores[1:]]
 
-    # Get the dataframe & title
+    # GETTING A DATAFRAME AND TITLE
     result_df = df.iloc[selected_car_indices]
     result_df['similarity_score'] = selected_car_scores
-    final_recommended_cars = result_df[['Car', 'Style', 'VehicleType', 'PriceRange', 'Transmission', 'similarity_score']]
+    final_recommended_cars = result_df[
+        ['Car', 'Style', 'VehicleType', 'PriceRange', 'Transmission', 'similarity_score']]
     return final_recommended_cars.head(no_ofRecommendations)
+
 
 RESULT_TEMP = """
 <div style="width:90%;height:100%;margin:1px;padding:5px;position:relative;border-radius:5px;border-bottom-right-radius: 60px;
@@ -55,18 +58,21 @@ box-shadow:0 0 5px 5px #ccc; background-color: #99E7F1;
 </div>
 """
 
-# Search For CARS
+
+# SEARCH FOR CARS
 @st.cache
 def search_car_if_not_found(term, df):
     result_df = df[df['Car'].str.contains(term)]
     return result_df
 
-#UPLOAD URL OF ANIMATION AS A JSON FILE
+
+# UPLOAD URL OF ANIMATION AS A JSON FILE
 def load_lottieurl(url: str):
     r = requests.get(url)
     if r.status_code != 200:
         return None
     return r.json()
+
 
 def main():
     st.title("CAR RECOMMENDATION WEBAPP")
@@ -80,7 +86,7 @@ def main():
         st.warning("CHOOSE 'RECOMMEND CARS' FROM THE SELECTBOX ON THE SIDE BAR TO SEE RECOMMENDATIONS!")
     else:
         cosine_sim_mat = vectorize_t2c(df['Car'])
-        search = st.text_input("SEARCH CAR")
+        search = st.selectbox("SEARCH CAR", df['Car'].values)
         no_ofRecommendations = st.sidebar.number_input("NUMBER", 4, 20, 7)
 
         if st.button("RECOMMEND"):
@@ -100,15 +106,15 @@ def main():
                             rec_score = row[1][5]
 
                             st.write(rec_car)
-                            stc.html(RESULT_TEMP.format(rec_car, rec_style, rec_vehicleType, rec_price, rec_transmission, rec_score), height=350)
+                            stc.html(
+                                RESULT_TEMP.format(rec_car, rec_style, rec_vehicleType, rec_price, rec_transmission,
+                                                   rec_score), height=350)
 
                 except:
                     lottie_hello = load_lottieurl("https://assets5.lottiefiles.com/private_files/lf30_fn9xcfqg.json")
                     st_lottie(lottie_hello, speed=1, height=400, width=400, quality="medium", loop=True)
                     st.warning("RESULTS NOT FOUND")
-                    st.warning("MODEL NAME SPELLED INCORECTLY! (TRY WRITING EVERY FIRST LETTER OF WORD IN CAPITAL)")
-                # st.write(result)
-
+                    st.warning("MODEL NAME SPELLED INCORRECTLY! (TRY WRITING EVERY FIRST LETTER OF WORD IN CAPITAL)")
 
 
 if __name__ == '__main__':
